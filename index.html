@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#050b14" />
+  <title>Sky Hunter 3D — Fighter Plane Combat Game</title>
+  <link rel="stylesheet" href="/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="game-container">
+    <!-- 3D WebGL Canvas Container -->
+    <div id="canvas-container"></div>
+
+    <!-- Screen Flash Overlay for damage / effects -->
+    <div id="screen-flash" class="screen-flash"></div>
+
+    <!-- Speed Lines Overlay for Boost -->
+    <canvas id="speed-lines"></canvas>
+
+    <!-- UI LAYER -->
+    <div id="ui-layer">
+      <!-- HUD (Heads-Up Display) -->
+      <div id="hud" class="hud hidden">
+        <!-- Top Left: Player Status -->
+        <div class="hud-top-left">
+          <div class="hud-panel status-card">
+            <div class="hud-label-row">
+              <span class="hud-label">HULL INTEGRITY</span>
+              <span id="hud-hp-text" class="hud-value">100%</span>
+            </div>
+            <div class="bar-container hp-bar-bg">
+              <div id="hud-hp-bar" class="bar-fill hp-bar-fill" style="width: 100%;"></div>
+            </div>
+
+            <!-- Shield Bar (visible when shield is active) -->
+            <div id="hud-shield-container" class="shield-container hidden">
+              <div class="hud-label-row">
+                <span class="hud-label shield-label">ENERGY SHIELD</span>
+                <span id="hud-shield-text" class="hud-value shield-value">100%</span>
+              </div>
+              <div class="bar-container shield-bar-bg">
+                <div id="hud-shield-bar" class="bar-fill shield-bar-fill" style="width: 100%;"></div>
+              </div>
+            </div>
+
+            <!-- Active Buff Indicators -->
+            <div id="hud-buffs" class="buff-indicators">
+              <!-- Dynamically populated e.g. Rapid Fire, Shield, Boost -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Top Center: Wave & Score Tracker -->
+        <div class="hud-top-center">
+          <div class="hud-panel wave-card">
+            <div class="wave-title-wrap">
+              <span class="wave-badge" id="hud-wave-badge">WAVE 1</span>
+              <span class="wave-theme-name" id="hud-wave-name">SUNNY RECON</span>
+            </div>
+            <div class="wave-progress-wrap">
+              <div class="hud-label-row small">
+                <span>HOSTILES REMAINING</span>
+                <span id="hud-enemies-count">5 / 5</span>
+              </div>
+              <div class="bar-container wave-bar-bg">
+                <div id="hud-wave-progress-bar" class="bar-fill wave-bar-fill" style="width: 100%;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top Right: Score & Pause -->
+        <div class="hud-top-right">
+          <div class="hud-panel score-card">
+            <div class="score-row">
+              <span class="hud-label">SCORE</span>
+              <span id="hud-score" class="hud-value score-val">000000</span>
+            </div>
+            <div class="score-row secondary">
+              <span class="hud-label">BEST</span>
+              <span id="hud-best-score" class="hud-value best-val">000000</span>
+            </div>
+          </div>
+          <button id="btn-toggle-touch" class="hud-btn-circle" title="Toggle On-Screen Joystick & Attack Buttons [🕹️]">
+            🕹️
+          </button>
+          <button id="btn-pause-hud" class="hud-btn-circle" title="Pause Game [Esc / P]">
+            <svg viewBox="0 0 24 24" width="20" height="20">
+              <rect x="6" y="5" width="4" height="14" rx="1" fill="currentColor"/>
+              <rect x="14" y="5" width="4" height="14" rx="1" fill="currentColor"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- MULTI-BOSS SQUAD HUD (ALL 5 AURA BOSSES ROW) -->
+        <div id="boss-squad-hud" class="boss-squad-hud hidden"></div>
+
+        <!-- EPIC TITAN BOSS HEALTH BAR (Primary / Solo Boss) -->
+        <div id="boss-hud" class="boss-hud hidden">
+          <div class="boss-portrait-wrap">
+            <img id="boss-hud-img" src="/assets/asura_boss.jpg" alt="Rakshas Boss" class="boss-portrait-img" />
+            <div id="boss-hud-glow" class="boss-portrait-glow"></div>
+          </div>
+          <div class="boss-details">
+            <div class="boss-title-row">
+              <div class="boss-name-group">
+                <span id="boss-hud-badge" class="boss-badge">TITAN BOSS</span>
+                <span id="boss-hud-name" class="boss-name">ASURA TITAN</span>
+              </div>
+              <span id="boss-hp-numeric" class="boss-hp-text">1200 / 1200 HP</span>
+            </div>
+            <div class="bar-container boss-bar-bg">
+              <div id="boss-hp-bar" class="bar-fill boss-bar-fill" style="width: 100%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Center Crosshair & Target Indicators -->
+        <div id="reticle-container">
+          <div class="reticle-center">
+            <div class="reticle-ring"></div>
+            <div class="reticle-dot"></div>
+            <div class="reticle-lead" id="reticle-lead"></div>
+          </div>
+          <!-- 3D projected missile lock indicator & bounding boxes rendered here -->
+          <div id="target-indicators"></div>
+        </div>
+
+        <!-- Floating Notifications / Wave Announcement -->
+        <div id="announcement-banner" class="announcement-banner hidden">
+          <h2 id="announcement-title">WAVE 1</h2>
+          <p id="announcement-sub">INCOMING ENEMY PATROL</p>
+        </div>
+
+        <!-- Bottom Left: Secondary Weapons / Missiles -->
+        <div class="hud-bottom-left">
+          <div class="hud-panel weapon-card">
+            <div class="weapon-header">
+              <span class="hud-label">HOMING MISSILES</span>
+              <span class="key-tag">[F]</span>
+            </div>
+            <div id="missile-slots" class="missile-slots">
+              <!-- Rendered via JS -->
+            </div>
+            <div id="missile-cooldown-text" class="weapon-sub">READY TO FIRE</div>
+          </div>
+        </div>
+
+        <!-- Bottom Right: Afterburner / Speed Boost -->
+        <div class="hud-bottom-right">
+          <div class="hud-panel boost-card">
+            <div class="boost-header">
+              <span class="hud-label">AFTERBURNER BOOST</span>
+              <span class="key-tag">[SHIFT]</span>
+            </div>
+            <div class="bar-container boost-bar-bg">
+              <div id="hud-boost-bar" class="bar-fill boost-bar-fill" style="width: 100%;"></div>
+            </div>
+            <div id="hud-boost-status" class="weapon-sub">BOOST READY</div>
+          </div>
+        </div>
+
+        <!-- MOBILE ON-SCREEN TOUCH CONTROLS -->
+        <div id="mobile-controls" class="mobile-controls touch-active">
+          <!-- Left Virtual Analog Joystick -->
+          <div id="touch-joystick-zone" class="touch-joystick-zone">
+            <div id="joystick-base" class="joystick-base">
+              <span class="joystick-arrow dir-up">▲</span>
+              <span class="joystick-arrow dir-down">▼</span>
+              <span class="joystick-arrow dir-left">◀</span>
+              <span class="joystick-arrow dir-right">▶</span>
+              <div class="joystick-crosshair"></div>
+              <div id="joystick-thumb" class="joystick-thumb">
+                <div class="joystick-thumb-dot"></div>
+              </div>
+            </div>
+            <div class="joystick-label">🕹️ FLIGHT STICK</div>
+          </div>
+
+          <!-- Right Action Touch Cluster -->
+          <div id="touch-actions-zone" class="touch-actions-zone">
+            <!-- Utility Quick Toggles -->
+            <div class="touch-util-row">
+              <button id="btn-touch-autofire" class="touch-util-btn active" title="Toggle Auto-Fire">
+                <span class="touch-util-icon">⚡</span>
+                <span class="touch-util-text">AUTO-FIRE</span>
+              </button>
+              <button id="btn-touch-unlimited" class="touch-util-btn active" title="Toggle Unlimited Ammo [U]">
+                <span class="touch-util-icon">∞</span>
+                <span class="touch-util-text">UNLIMITED</span>
+              </button>
+            </div>
+
+            <!-- 5-Button Primary & Tactical Attack Cluster -->
+            <div class="touch-pads-cluster">
+              <!-- 1. Force Shield Button -->
+              <button id="btn-touch-shield" class="touch-pad-btn shield-btn" title="Activate Force Shield [E]">
+                <span class="touch-pad-icon">🛡️</span>
+                <span class="touch-pad-label">SHIELD</span>
+                <span id="shield-touch-status" class="touch-pad-status">READY</span>
+              </button>
+
+              <!-- 2. Guided Missiles Button -->
+              <button id="btn-touch-missile" class="touch-pad-btn missile-btn" title="Launch Guided Missile [F]">
+                <span class="touch-pad-icon">🚀</span>
+                <span class="touch-pad-label">MISSILE</span>
+                <span id="missile-touch-count" class="touch-pad-status">x6</span>
+              </button>
+
+              <!-- 3. EMP Nova Bomb Button -->
+              <button id="btn-touch-bomb" class="touch-pad-btn bomb-btn" title="Detonate EMP Nova Bomb [B]">
+                <span class="touch-pad-icon">💣</span>
+                <span class="touch-pad-label">EMP BOMB</span>
+                <span id="bomb-touch-status" class="touch-pad-status">READY</span>
+              </button>
+
+              <!-- 4. Afterburner Boost Button -->
+              <button id="btn-touch-boost" class="touch-pad-btn boost-btn" title="Engage Afterburners [Shift]">
+                <span class="touch-pad-icon">⚡</span>
+                <span class="touch-pad-label">BOOST</span>
+                <span class="touch-pad-status">THRUST</span>
+              </button>
+
+              <!-- 5. Twin Laser Fire Button (Hold for Manual Fire) -->
+              <button id="btn-touch-fire" class="touch-pad-btn fire-btn" title="Fire Guns [Space / Left Click]">
+                <span class="touch-pad-icon">🔥</span>
+                <span class="touch-pad-label">CANNONS</span>
+                <span class="touch-pad-status">FIRE</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Floating Score / Combat Feedback Overlay -->
+        <div id="combat-popups"></div>
+      </div>
+
+      <!-- MAIN MENU OVERLAY -->
+      <div id="screen-menu" class="screen-overlay">
+        <div class="menu-content">
+          <div class="logo-container">
+            <div class="game-subtitle">ARCADE AIR COMBAT</div>
+            <h1 class="game-logo">SKY HUNTER<span class="logo-3d">3D</span></h1>
+            <div class="logo-glow"></div>
+          </div>
+
+          <div class="menu-stats-badge">
+            <div class="stat-box">
+              <span class="stat-label">HIGH SCORE</span>
+              <span id="menu-high-score" class="stat-val">0</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-box">
+              <span class="stat-label">MAX WAVE</span>
+              <span id="menu-max-wave" class="stat-val">1</span>
+            </div>
+          </div>
+
+          <div class="menu-buttons">
+            <button id="btn-play" class="btn btn-primary pulse">
+              <span class="btn-icon">▶</span> LAUNCH MISSION
+            </button>
+            <button id="btn-boss-battle" class="btn btn-boss pulse-boss">
+              <span class="btn-icon">👹</span> RAKSHAS BOSS GAUNTLET
+            </button>
+            <button id="btn-how-to-play" class="btn btn-secondary">
+              <span class="btn-icon">⌨</span> FLIGHT MANUAL & INTEL
+            </button>
+            <button id="btn-settings" class="btn btn-secondary">
+              <span class="btn-icon">⚙</span> MISSION SETTINGS
+            </button>
+          </div>
+
+          <div class="quick-controls-hint">
+            <span>[W/A/S/D] or [Arrows] Fly</span> •
+            <span>[SPACE] Fire Guns</span> •
+            <span>[F] Fire Missile</span> •
+            <span>[U] Unlimited Ammo</span> •
+            <span>[SHIFT] Boost</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- RAKSHAS BOSS SELECTION MODAL -->
+      <div id="screen-boss-select" class="screen-overlay modal hidden">
+        <div class="modal-card boss-select-card">
+          <div class="modal-header">
+            <h2>👹 RAKSHAS AURA BOSS GAUNTLET</h2>
+            <button id="btn-boss-select-close" class="btn-close">✕</button>
+          </div>
+          <div class="modal-body">
+            <p class="boss-select-desc">Select any mythical Rakshas Titan to duel in the skies. Each ancient titan commands a unique elemental energy aura, distinct attack styles, and colossal health armor.</p>
+            <div id="boss-cards-grid" class="boss-cards-grid">
+              <!-- Dynamically populated from CONFIG.rakshasBosses -->
+            </div>
+          </div>
+          <div class="modal-footer boss-select-footer">
+            <button id="btn-boss-random" class="btn btn-boss pulse-boss">
+              <span class="btn-icon">⚡</span> RANDOM RAKSHAS ENCOUNTER
+            </button>
+            <button id="btn-boss-select-back" class="btn btn-secondary">RETURN TO MENU</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- HOW TO PLAY MODAL -->
+      <div id="screen-help" class="screen-overlay modal hidden">
+        <div class="modal-card">
+          <div class="modal-header">
+            <h2>FLIGHT MANUAL</h2>
+            <button id="btn-help-close" class="btn-close">✕</button>
+          </div>
+          <div class="modal-body help-grid">
+            <div class="help-section">
+              <h3>PILOT CONTROLS</h3>
+              <div class="control-key-list">
+                <div class="key-item">
+                  <div class="key-badge">W / ↑</div>
+                  <div class="key-badge">S / ↓</div>
+                  <span>Pitch Up & Down</span>
+                </div>
+                <div class="key-item">
+                  <div class="key-badge">A / ←</div>
+                  <div class="key-badge">D / →</div>
+                  <span>Bank & Turn Left / Right</span>
+                </div>
+                <div class="key-item">
+                  <div class="key-badge long">SPACE / LMB</div>
+                  <span>Fire Twin Plasma Machine Guns</span>
+                </div>
+                <div class="key-item">
+                  <div class="key-badge">F / RMB</div>
+                  <span>Launch Guided Homing Missile</span>
+                </div>
+                <div class="key-item">
+                  <div class="key-badge long">SHIFT</div>
+                  <span>Engage Afterburner Boost</span>
+                </div>
+                <div class="key-item">
+                  <div class="key-badge">P / ESC</div>
+                  <span>Pause Mission</span>
+                </div>
+              </div>
+
+              <div class="control-key-list" style="margin-top: 14px;">
+                <h4 style="color: #00f0ff; font-family: var(--font-display); font-size: 11px; margin-bottom: 6px;">📱 MOBILE TOUCH CONTROLS</h4>
+                <div class="key-item">
+                  <div class="key-badge">LEFT THUMB</div>
+                  <span>Virtual Flight Stick (360° Steering)</span>
+                </div>
+                <div class="key-item">
+                  <div class="key-badge">🔥 FIRE / AUTO</div>
+                  <span>Twin Plasma Guns (Or Auto-Fire)</span>
+                </div>
+                <div class="key-item">
+                  <div class="key-badge">🚀 MISSILE</div>
+                  <span>Tap to Launch Guided Missiles</span>
+                </div>
+                <div class="key-item">
+                  <div class="key-badge">⚡ BOOST</div>
+                  <span>Hold for Afterburner Speed</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="help-section">
+              <h3>HOSTILE AIRCRAFT</h3>
+              <div class="intel-item">
+                <div class="intel-color scout"></div>
+                <div>
+                  <strong>Scout Fighter</strong>
+                  <p>Agile, fast weaving, light armor. 100 PTS</p>
+                </div>
+              </div>
+              <div class="intel-item">
+                <div class="intel-color interceptor"></div>
+                <div>
+                  <strong>Interceptor</strong>
+                  <p>Twin-jet dogfighter, double burst cannon. 250 PTS</p>
+                </div>
+              </div>
+              <div class="intel-item">
+                <div class="intel-color gunship"></div>
+                <div>
+                  <strong>Heavy Gunship</strong>
+                  <p>Heavily armored, 3-way spread cannons. 500 PTS</p>
+                </div>
+              </div>
+              <div class="intel-item boss-intel-item">
+                <img src="/assets/asura_boss.jpg" alt="Asura Titan" class="intel-boss-img" />
+                <div>
+                  <strong style="color: #ff4500;">★ ASURA TITAN (WORLD BOSS)</strong>
+                  <p>Mythical demon beast overlord. Multi-directional magma fireballs, claw energy strikes, and immense hull armor. 3000 PTS</p>
+                </div>
+              </div>
+
+              <h3 style="margin-top: 15px;">FIELD POWER-UPS</h3>
+              <div class="powerup-list">
+                <div class="pu-badge green">REPAIR</div><span>Restore +35 Hull HP</span>
+                <div class="pu-badge blue">SHIELD</div><span>Temporary invulnerability</span>
+                <div class="pu-badge orange">RAPID FIRE</div><span>2x Machine Gun fire rate</span>
+                <div class="pu-badge purple">MISSILES</div><span>+3 Guided Homing Missiles</span>
+                <div class="pu-badge yellow">BOOST</div><span>Instant max afterburner refill</span>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button id="btn-help-back" class="btn btn-primary">RETURN TO COCKPIT</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SETTINGS MODAL -->
+      <div id="screen-settings" class="screen-overlay modal hidden">
+        <div class="modal-card">
+          <div class="modal-header">
+            <h2>TACTICAL SETTINGS</h2>
+            <button id="btn-settings-close" class="btn-close">✕</button>
+          </div>
+          <div class="modal-body settings-grid">
+            <div class="setting-row">
+              <label for="setting-master-vol">Master Volume</label>
+              <div class="slider-val-wrap">
+                <input type="range" id="setting-master-vol" min="0" max="100" value="80" />
+                <span id="val-master-vol">80%</span>
+              </div>
+            </div>
+            <div class="setting-row">
+              <label for="setting-music-vol">Music Volume (Synth Arcade)</label>
+              <div class="slider-val-wrap">
+                <input type="range" id="setting-music-vol" min="0" max="100" value="70" />
+                <span id="val-music-vol">70%</span>
+              </div>
+            </div>
+            <div class="setting-row">
+              <label for="setting-sfx-vol">Sound Effects Volume</label>
+              <div class="slider-val-wrap">
+                <input type="range" id="setting-sfx-vol" min="0" max="100" value="85" />
+                <span id="val-sfx-vol">85%</span>
+              </div>
+            </div>
+
+            <div class="setting-divider"></div>
+
+            <div class="setting-row">
+              <label for="setting-mouse-steer">Mouse Flight Steering</label>
+              <input type="checkbox" id="setting-mouse-steer" class="toggle-checkbox" />
+            </div>
+            <div class="setting-row">
+              <label for="setting-mouse-sens">Mouse Sensitivity</label>
+              <div class="slider-val-wrap">
+                <input type="range" id="setting-mouse-sens" min="1" max="10" value="5" />
+                <span id="val-mouse-sens">5</span>
+              </div>
+            </div>
+
+            <div class="setting-divider"></div>
+
+            <div class="setting-row">
+              <label for="setting-graphics">Graphics Quality</label>
+              <select id="setting-graphics" class="select-dropdown">
+                <option value="high" selected>High (Particles & Post-FX)</option>
+                <option value="medium">Medium (Balanced)</option>
+                <option value="low">Low (Performance Boost)</option>
+              </select>
+            </div>
+            <div class="setting-row">
+              <label for="setting-reduced-fx">Reduced Visual Effects</label>
+              <input type="checkbox" id="setting-reduced-fx" class="toggle-checkbox" />
+            </div>
+
+            <div class="setting-divider"></div>
+
+            <div class="setting-row">
+              <label for="setting-unlimited-ammo" style="color: #00ff88; font-weight: 700;">⚡ Unlimited Ammo & Rapid Fire [U]</label>
+              <input type="checkbox" id="setting-unlimited-ammo" class="toggle-checkbox" checked />
+            </div>
+
+            <div class="setting-row">
+              <label for="setting-touch-controls" style="color: #00f0ff; font-weight: 700;">📱 Touch Controls Overlay</label>
+              <select id="setting-touch-controls" class="select-dropdown">
+                <option value="auto" selected>Auto-Detect (Smart)</option>
+                <option value="always">Always Display (Virtual Joystick)</option>
+                <option value="hidden">Hidden (Keyboard / Mouse)</option>
+              </select>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button id="btn-settings-save" class="btn btn-primary">SAVE PREFERENCES</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAUSE OVERLAY -->
+      <div id="screen-pause" class="screen-overlay modal hidden">
+        <div class="modal-card pause-card">
+          <div class="pause-header">
+            <h2>MISSION PAUSED</h2>
+            <div class="pause-sub">FLIGHT SYSTEM SUSPENDED</div>
+          </div>
+          <div class="pause-buttons">
+            <button id="btn-pause-resume" class="btn btn-primary">
+              <span class="btn-icon">▶</span> RESUME FLIGHT
+            </button>
+            <button id="btn-pause-restart" class="btn btn-secondary">
+              <span class="btn-icon">↺</span> RESTART MISSION
+            </button>
+            <button id="btn-pause-settings" class="btn btn-secondary">
+              <span class="btn-icon">⚙</span> SETTINGS
+            </button>
+            <button id="btn-pause-menu" class="btn btn-danger">
+              <span class="btn-icon">⏏</span> ABORT TO MAIN MENU
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- GAME OVER SCREEN -->
+      <div id="screen-gameover" class="screen-overlay modal hidden">
+        <div class="modal-card gameover-card">
+          <div class="gameover-header">
+            <div class="gameover-alert">AIRCRAFT DESTROYED</div>
+            <h2 class="gameover-title">MISSION OVER</h2>
+          </div>
+
+          <div class="gameover-stats">
+            <div class="go-stat-row">
+              <span>FINAL SCORE:</span>
+              <strong id="go-final-score" class="highlight-score">0</strong>
+            </div>
+            <div class="go-stat-row">
+              <span>RECORD SCORE:</span>
+              <strong id="go-best-score">0</strong>
+            </div>
+            <div class="go-stat-row">
+              <span>HIGHEST WAVE REACHED:</span>
+              <strong id="go-wave-reached">Wave 1</strong>
+            </div>
+            <div class="go-stat-row">
+              <span>HOSTILES ELIMINATED:</span>
+              <strong id="go-enemies-destroyed">0</strong>
+            </div>
+          </div>
+
+          <div class="gameover-buttons">
+            <button id="btn-gameover-restart" class="btn btn-primary pulse">
+              <span class="btn-icon">↺</span> FLY AGAIN
+            </button>
+            <button id="btn-gameover-menu" class="btn btn-secondary">
+              <span class="btn-icon">⏏</span> MAIN MENU
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
