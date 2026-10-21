@@ -109,13 +109,13 @@ export class UIManager {
 
   loadPersistence() {
     try {
-      const savedHigh = localStorage.getItem('skyhunter_highscore');
+      const savedHigh = localStorage.getItem('nangi_pungi_highscore');
       if (savedHigh !== null) this.highScore = parseInt(savedHigh, 10) || 0;
 
-      const savedWave = localStorage.getItem('skyhunter_maxwave');
+      const savedWave = localStorage.getItem('nangi_pungi_maxwave');
       if (savedWave !== null) this.maxWave = parseInt(savedWave, 10) || 1;
 
-      const savedSettings = localStorage.getItem('skyhunter_settings');
+      const savedSettings = localStorage.getItem('nangi_pungi_settings');
       if (savedSettings) {
         this.settings = { ...this.settings, ...JSON.parse(savedSettings) };
       }
@@ -128,9 +128,9 @@ export class UIManager {
 
   savePersistence() {
     try {
-      localStorage.setItem('skyhunter_highscore', this.highScore.toString());
-      localStorage.setItem('skyhunter_maxwave', this.maxWave.toString());
-      localStorage.setItem('skyhunter_settings', JSON.stringify(this.settings));
+      localStorage.setItem('nangi_pungi_highscore', this.highScore.toString());
+      localStorage.setItem('nangi_pungi_maxwave', this.maxWave.toString());
+      localStorage.setItem('nangi_pungi_settings', JSON.stringify(this.settings));
     } catch (e) {
       console.warn('LocalStorage save error:', e);
     }

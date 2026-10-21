@@ -10,7 +10,7 @@ import { EffectsManager } from './effects.js';
 import { UIManager } from './ui.js';
 import { MobileControlsManager } from './mobile.js';
 
-class SkyHunterGame {
+class NangiPungiGame {
   constructor() {
     this.state = 'MENU'; // MENU, PLAYING, PAUSED, GAME_OVER
 
@@ -437,5 +437,5 @@ class SkyHunterGame {
 
 // Instantiate game on window load
 window.addEventListener('DOMContentLoaded', () => {
-  new SkyHunterGame();
+  new NangiPungiGame();
 });

@@ -1,11 +1,11 @@
-# Sky Hunter 3D — Arcade Fighter Plane Combat Game
+# Nangi Pungi vaibhav joshi aur uski londiya — Arcade Fighter Plane Combat Game
 
 [![Three.js](https://img.shields.io/badge/Three.js-r128+-049ef4?style=flat-square&logo=three.js&logoColor=white)](https://threejs.org/)
 [![Vite](https://img.shields.io/badge/Vite-Build_Tool-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev/)
 [![WebGL](https://img.shields.io/badge/WebGL-Hardware_Accelerated-990000?style=flat-square&logo=webgl&logoColor=white)](https://www.khronos.org/webgl/)
 [![Mobile Ready](https://img.shields.io/badge/Mobile-Touch_Joystick_%26_Attacks-00f0ff?style=flat-square)](https://github.com/OjasBaitule01/game)
 
-**Sky Hunter 3D** is a colorful, high-octane 3D arcade air combat game built with modern Three.js and the Web Audio API. Pilot a high-performance supersonic fighter jet through dynamic atmospheric environments, dogfight swarms of enemy aircraft, engage in multi-stage boss battles against the legendary **5 Rakshas Aura Titans**, collect power-ups, and execute explosive special attacks.
+**Nangi Pungi vaibhav joshi aur uski londiya** is a colorful, high-octane 3D arcade air combat game built with modern Three.js and the Web Audio API. Pilot a high-performance supersonic fighter jet through dynamic atmospheric environments, dogfight swarms of enemy aircraft, engage in multi-stage boss battles against the legendary **5 Rakshas Aura Titans**, collect power-ups, and execute explosive special attacks.
 
 Play seamlessly across **Desktop (Keyboard + Mouse)** and **Mobile (Virtual Joystick + Multi-Button Combat Deck)**!
 

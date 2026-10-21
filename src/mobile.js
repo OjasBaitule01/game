@@ -22,6 +22,7 @@ export class MobileControlsManager {
     this.btnAutofire = document.getElementById('btn-touch-autofire');
     this.btnUnlimited = document.getElementById('btn-touch-unlimited');
     this.btnToggleHud = document.getElementById('btn-toggle-touch');
+    this.btnFullscreen = document.getElementById('btn-fullscreen');
 
     // Button Status Badges
     this.missileTouchCount = document.getElementById('missile-touch-count');
@@ -95,10 +96,19 @@ export class MobileControlsManager {
     const touch = e.changedTouches[0];
     this.activeJoystickTouchId = touch.identifier;
 
-    const rect = this.joystickBase.getBoundingClientRect();
+    // Floating Joystick: center virtual stick directly under the user's thumb!
+    const zoneRect = this.joystickZone.getBoundingClientRect();
+    const relX = touch.clientX - zoneRect.left;
+    const relY = touch.clientY - zoneRect.top;
+
+    this.joystickBase.style.position = 'absolute';
+    this.joystickBase.style.left = `${relX}px`;
+    this.joystickBase.style.top = `${relY}px`;
+    this.joystickBase.style.transform = 'translate(-50%, -50%)';
+
     this.centerOrigin = {
-      x: rect.left + rect.width / 2,
-      y: rect.top + rect.height / 2
+      x: touch.clientX,
+      y: touch.clientY
     };
 
     this.joystickBase.classList.add('active');
@@ -160,6 +170,30 @@ export class MobileControlsManager {
   resetJoystick() {
     this.joystickThumb.style.transform = 'translate(0px, 0px)';
     this.player.setTouchSteer(0, 0);
+
+    // Reset floating base styles so it snaps back to bottom-left cleanly
+    this.joystickBase.style.position = '';
+    this.joystickBase.style.left = '';
+    this.joystickBase.style.top = '';
+    this.joystickBase.style.transform = '';
+  }
+
+  toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      const el = document.documentElement;
+      if (el.requestFullscreen) {
+        el.requestFullscreen().catch(() => {});
+      } else if (el.webkitRequestFullscreen) {
+        el.webkitRequestFullscreen();
+      }
+      if (this.game.ui) this.game.ui.showCombatPopup('⛶ FULLSCREEN IMMERSIVE MODE', false, 'powerup');
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+    }
   }
 
   initActionButtons() {
@@ -308,6 +342,13 @@ export class MobileControlsManager {
         this.container.classList.toggle('touch-active');
         const isVisible = this.container.classList.contains('touch-active');
         this.game.ui.showCombatPopup(isVisible ? '🕹️ ON-SCREEN CONTROLS ON' : '🕹️ CONTROLS HIDDEN', false);
+      });
+    }
+
+    if (this.btnFullscreen) {
+      this.btnFullscreen.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.toggleFullscreen();
       });
     }
   }

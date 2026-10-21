@@ -337,11 +337,14 @@ export class SceneManager {
       this.camera.updateProjectionMatrix();
     }
 
+    const aspect = window.innerWidth / window.innerHeight;
+    const isPortrait = aspect < 1.0;
+
     // Camera target position: behind and slightly above player
     const desiredPos = new THREE.Vector3(
       playerPos.x * 0.85,
-      playerPos.y * 0.85 + CONFIG.camera.height,
-      playerPos.z + CONFIG.camera.distance
+      playerPos.y * 0.85 + CONFIG.camera.height + (isPortrait ? 2.2 : 0),
+      playerPos.z + CONFIG.camera.distance + (isPortrait ? 5.5 : 0)
     );
 
     this.camera.position.lerp(desiredPos, CONFIG.camera.lerpSpeed * delta);
@@ -375,9 +378,24 @@ export class SceneManager {
   }
 
   onResize() {
-    this.camera.aspect = window.innerWidth / window.innerHeight;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    const aspect = width / height;
+
+    this.camera.aspect = aspect;
+
+    // Responsive FOV: on mobile / portrait screens (aspect < 1.0),
+    // widen the field of view so the sky and flight boundaries don't feel squished or zoomed in!
+    if (aspect < 1.0) {
+      const targetHorizFovRad = 74 * (Math.PI / 180);
+      const vertFovRad = 2 * Math.atan(Math.tan(targetHorizFovRad / 2) / aspect);
+      this.camera.fov = THREE.MathUtils.clamp((vertFovRad * 180) / Math.PI, 58, 88);
+    } else {
+      this.camera.fov = CONFIG.camera.fov;
+    }
+
     this.camera.updateProjectionMatrix();
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.renderer.setSize(width, height);
   }
 
   render() {
